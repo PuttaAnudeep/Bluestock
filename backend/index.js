@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const mysql = require('mysql2');
 
@@ -8,6 +9,7 @@ const port = 5000;
 
 // Middleware to parse JSON request body
 app.use(bodyParser.json());
+app.use(cors());
 
 // MySQL Connection Pool (Better for multiple requests)
 const pool = mysql.createPool({
