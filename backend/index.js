@@ -15,64 +15,149 @@ app.use(cors());
 const pool = mysql.createPool({
     host: '127.0.0.1',
     user: 'root',
-    password: 'root', // replace with your MySQL password
+    password: 'root', // Replace with your MySQL password
     database: 'bluestock',
     waitForConnections: true,
-    connectionLimit: 10, // Limit concurrent connections
+    connectionLimit: 10,
     queueLimit: 0
-});
+}).promise(); // Use promise for async/await support
 
-// Signup route to handle the form submission
-app.post('/signup', (req, res) => {
+// Signup Route to Handle Form Submission
+app.post('/signup', async (req, res) => {
     console.log("Received data:", req.body);
     const { name, email, password } = req.body;
+
     if (!name || !email || !password) {
         return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
-    // Hash the password before saving to the database
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            console.error("Error hashing password:", err);
-            return res.status(500).json({ success: false, message: 'Error hashing password' });
-        }
+    try {
+        // Hash the password before saving to the database
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert user data into the database using a connection from the pool
-        pool.getConnection((err, connection) => {
-            if (err) {
-                console.error("Error getting connection:", err);
-                return res.status(500).json({ success: false, message: 'Database connection error' });
-            }
+        // Insert user data into the database
+        const [result] = await pool.execute(
+            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            [name, email, hashedPassword]
+        );
 
-            const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-            connection.query(query, [name, email, hashedPassword], (err, result) => {
-                connection.release(); // Release connection after query execution
-
-                if (err) {
-                    console.error("Error inserting data into database:", err);
-                    return res.status(500).json({ success: false, message: 'Error inserting data into database' });
-                }
-
-                console.log("User inserted with ID:", result.insertId);
-                res.status(200).json({ success: true, message: 'User created successfully' });
-            });
-        });
-    });
+        console.log("User inserted with ID:", result.insertId);
+        res.status(201).json({ success: true, message: 'User created successfully' });
+    } catch (error) {
+        console.error("Error inserting data into database:", error);
+        res.status(500).json({ success: false, message: 'Error inserting data into database' });
+    }
 });
 
-// Gracefully close the connection pool when the server stops
-process.on('SIGINT', () => {
-    pool.end((err) => {
-        if (err) {
-            console.error("Error closing MySQL pool:", err);
-        } else {
-            console.log("MySQL pool closed.");
+// IPO Registration Route & Controller Combined
+app.post('/registerIpo', async (req, res) => {
+    try {
+        // Destructure directly from req.body
+        let {
+            company_name, price_band, open_date, close_date, issue_size,
+            issue_type, listing_date, status, ipo_price, listing_price,
+            listing_gain, listed_date, current_market_price, current_return,
+            rhp_link, drhp_link
+        } = req.body;
+
+        // Debug: Log received request body
+        console.log("Received IPO data:", req.body);
+
+        // Convert undefined values to null
+        company_name = company_name || null;
+        price_band = price_band || null;
+        open_date = open_date || null;
+        close_date = close_date || null;
+        issue_size = issue_size || null;
+        issue_type = issue_type || null;
+        listing_date = listing_date || null;
+        status = status || null;
+        ipo_price = ipo_price || null;
+        listing_price = listing_price || null;
+        listing_gain = listing_gain || null;
+        listed_date = listed_date || null;
+        current_market_price = current_market_price || null;
+        current_return = current_return || null;
+        rhp_link = rhp_link || null;
+        drhp_link = drhp_link || null;
+
+        // Check for required fields
+        if (!company_name || !price_band || !issue_size || !issue_type || !status) {
+            return res.status(400).json({ success: false, message: 'Missing required IPO fields' });
         }
+
+        // SQL Query
+        const sql = `
+            INSERT INTO ipo_info (
+                company_name, price_band, open_date, close_date, issue_size,
+                issue_type, listing_date, status, ipo_price, listing_price,
+                listing_gain, listed_date, current_market_price, current_return, 
+                rhp_link, drhp_link
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const values = [
+            company_name, price_band, open_date, close_date, issue_size,
+            issue_type, listing_date, status, ipo_price, listing_price,
+            listing_gain, listed_date, current_market_price, current_return,
+            rhp_link, drhp_link
+        ];
+
+        // Execute Query
+        const [result] = await pool.execute(sql, values);
+        console.log("IPO registered with ID:", result.insertId);
+
+        res.status(201).json({ message: 'IPO Registered Successfully', ipoId: result.insertId });
+
+    } catch (error) {
+        console.error("Error registering IPO:", error);
+        res.status(500).json({ error: 'Failed to register IPO' });
+    }
+});
+app.get('/registerIpo', async (req, res) => {
+    try {
+        const [rows] = await pool.execute('SELECT * FROM ipo_info');
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'No IPOs found' });
+        }
+
+        res.status(200).json({ success: true, data: rows });
+    } catch (error) {
+        console.error("Error fetching IPOs:", error);
+        res.status(500).json({ success: false, message: 'Failed to retrieve IPO details' });
+    }
+});
+app.delete('/deleteIpo/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const [result] = await pool.execute('DELETE FROM ipo_info WHERE id = ?', [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "IPO not found" });
+        }
+
+        res.json({ success: true, message: "IPO deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting IPO:", error);
+        res.status(500).json({ success: false, message: "Failed to delete IPO" });
+    }
+});
+    
+// Gracefully Close the Connection Pool When the Server Stops
+process.on('SIGINT', async () => {
+    try {
+        await pool.end();
+        console.log("MySQL pool closed.");
         process.exit();
-    });
+    } catch (err) {
+        console.error("Error closing MySQL pool:", err);
+        process.exit(1);
+    }
 });
 
-// Start the server
+// Start the Server
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });

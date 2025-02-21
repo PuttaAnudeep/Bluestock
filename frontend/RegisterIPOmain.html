@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPO Registration</title>
+    <link rel="stylesheet" href="RegisterIPOmain.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <div>
+            <h1>Upcoming IPO Information</h1>
+            <p>Manage your IPO Details</p>
+        </div>
+        <div class="btn">
+            <br>
+            <button type="submit" class="register-btn">Register</button>
+            <button class="cancel-btn">Cancel</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav>
+                <ul>
+                    <li><a href="#" class="active">IPO Information</a></li>
+                    <li><a href="#">IPO Info</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <section class="ipo-info">
+                <h1>IPO Information</h1>
+                <p>Enter IPO Details</p>
+                <hr>
+
+                <!-- Company Logo -->
+                <div class="logo-section">
+                    <img src="../assets/logo.png" alt="Company Logo" class="company-logo">
+                    <div class="logo-details">
+                        <p>NSE India</p>
+                        <p>Tech Listed, <br>Pune</p>
+                        <button class="upload">Upload Logo</button>
+                        <button class="delete">Delete</button>
+                    </div>
+                </div>
+
+                <!-- IPO Form -->
+                <form id="ipoForms">
+                    <div class="form-group">
+                        <label for="company_name">Company Name:</label><br>
+                        <input type="text" id="company_name" name="company_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price_band">Price Band:</label><br>
+                        <input type="text" id="price_band" name="price_band" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="open_date">Open Date:</label><br>
+                        <input type="date" id="open_date" name="open_date" >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="close_date">Close Date:</label><br>
+                        <input type="date" id="close_date" name="close_date" >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="issue_size">Issue Size:</label><br>
+                        <input type="text" id="issue_size" name="issue_size" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="issue_type">Issue Type:</label><br>
+                        <input type="text" id="issue_type" name="issue_type" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="listing_date">Listing Date:</label><br>
+                        <input type="date" id="listing_date" name="listing_date" >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status:</label><br>
+                        <input type="text" id="status" name="status" required>
+                    </div>
+
+                    <h2>New Listed IPO Details (When IPO Gets Listed)</h2><br>
+
+                    <div class="form-group">
+                        <label for="ipo_price">IPO Price:</label><br>
+                        <input type="text" id="ipo_price" name="ipo_price" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="listing_price">Listing Price:</label><br>
+                        <input type="text" id="listing_price" name="listing_price" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="listing_gain">Listing Gain:</label><br>
+                        <input type="text" id="listing_gain" name="listing_gain" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="listed_date">Listed Date:</label><br>
+                        <input type="date" id="listed_date" name="listed_date" >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="CMP">CMP:</label><br>
+                        <input type="text" id="CMP" name="CMP" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Current">Current Return:</label><br>
+                        <input type="text" id="Current" name="Current" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="RHP">RHP:</label><br>
+                        <input type="text" id="RHP" name="RHP" placeholder="Enter RHP PDF Link" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="DRHP">DRHP:</label><br>
+                        <input type="text" id="DRHP" name="DRHP" placeholder="Enter DRHP PDF Link" required>
+                    </div>
+                </form>
+                <br>
+                <button class="register-btn" onclick="window.location.href='UpcomingIpoTable.html'">Register IPO</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Handle form submission
+        document.getElementById('ipoForms').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Gather form data
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => { data[key] = value });
+
+            // Send the data to the backend
+            try {
+                const response = await fetch('http://localhost:5000/registerIpo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('IPO registered successfully!');
+                } else {
+                    alert('Error registering IPO: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Something went wrong while registering the IPO.');
+            }
+        });
+    </script>
+
+</body>
+</html>
